@@ -1,0 +1,32 @@
+# =============================================================================
+# Script Name:     04-03_generate_charts.R
+# Purpose:         Data analysis
+# Author:          Garrett Ordner
+# Date Created:    2025-07-21
+# Last Modified:   2025-07-27 by Garrett Ordner
+# =============================================================================
+
+
+metrics <- c("Value Added", "Earnings", "Employment")
+columns <- c("capex_louisiana_impact", "opex_louisiana_impact", "utility_rate_louisiana_impact")
+
+param_grid <- expand_grid(
+  impact_metric = metrics,
+  y_column = columns
+) %>%
+  left_join(y_column_label, by = "y_column")
+
+# Create and save a plot for each combination
+pwalk(param_grid, function(impact_metric, y_column, label) {
+  filename <- glue("output/charts/{impact_metric}_{y_column}.png")
+  
+  make_ces_plot(
+    data = power_impacts_summary,
+    chart_impact_metric = impact_metric,
+    y_column = y_column,
+    title_label = label,
+    output_path = filename
+  ) %>%
+    print()
+})
+

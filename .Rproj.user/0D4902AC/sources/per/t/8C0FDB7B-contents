@@ -1,0 +1,56 @@
+# =============================================================================
+# Script Name:     00_main.R
+# Purpose:         Main script
+# Author:          Garrett Ordner
+# Date Created:    2025-06-02
+# Last Modified:   2025-06-08 by Garrett Ordner
+#
+# Inputs:          input
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           
+# =============================================================================
+
+# Optional: advise user
+message("Run `renv::restore()` once to set up the project environment.")
+
+# ---- Load packages ----
+if (!requireNamespace("renv", quietly = TRUE)) {
+  install.packages("renv")
+}
+library(here)
+library(dplyr)
+library(readr)
+library(rlang)
+library(stringr)
+library(ggplot2)
+library(grid)
+library(png)
+library(cowplot)
+library(sysfonts)
+library(showtext)
+library(lubridate)
+library(tibble)
+library(purrr)
+library(janitor)
+library(glue)
+library(tidyr)
+library(scales)
+library(crayon)
+library(openxlsx)
+
+
+
+# ---- Scripts ---- 
+source(here::here("R", "98_chart_functions.R")) #Define Chart Functions
+source(here::here("R","99_functions.R")) #Define Functions
+source(here::here("scripts","01_load_data.R")) #Load the data
+source(here::here("scripts","02-01_assumed_inputs.R")) #Energy calculations and conversions for fuel savings
+source(here::here("scripts","02-02_clean_data.R")) #Clean, transform, and merge the data
+source(here::here("scripts","03_analyze_data.R")) #perform analysis
+source(here::here("scripts","04-01_clean_results.R")) #format results for output generation
+source(here::here("scripts","04-02_generate_output.R")) #generate results for use elsewhere
+source(here::here("scripts","04-03_generate_charts.R")) #generate charts
+
+

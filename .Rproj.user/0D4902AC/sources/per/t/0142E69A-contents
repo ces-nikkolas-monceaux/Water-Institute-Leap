@@ -1,0 +1,77 @@
+# =============================================================================
+# Script Name:     04-1_clean_output.R
+# Purpose:         Data analysis
+# Author:          author
+# Date Created:    2025-07-21
+# Last Modified:   2025-07-21 by Garrett Ordner
+#
+# Inputs:          
+# Outputs:         output
+# =============================================================================
+
+
+# ----POWER IMPACTS----
+
+# Collapse to final table values
+power_gen_table_data <- power_impacts_summary %>%
+  group_by(impact_level, impact_metric) %>%
+  summarise(
+    # OPEX values from max time_period
+    opex_louisiana_impact = opex_louisiana_impact[which.max(time_period)],
+    opex_us_impact = opex_us_impact[which.max(time_period)],
+    
+    # CAPEX logic
+    capex_louisiana_impact = if (unique(impact_metric) == "Employment") {
+      mean(capex_louisiana_impact, na.rm = TRUE)
+    } else {
+      sum(capex_louisiana_impact, na.rm = TRUE)
+    },
+    capex_us_impact = if (unique(impact_metric) == "Employment") {
+      mean(capex_us_impact, na.rm = TRUE)
+    } else {
+      sum(capex_us_impact, na.rm = TRUE)
+    },
+    utility_rate_louisiana_impact = if (unique(impact_metric) == "Employment") {
+      mean(utility_rate_louisiana_impact, na.rm = TRUE)
+    } else {
+      sum(utility_rate_louisiana_impact, na.rm = TRUE)
+    },
+    utility_rate_us_impact = if (unique(impact_metric) == "Employment") {
+      mean(utility_rate_us_impact, na.rm = TRUE)
+    } else {
+      sum(utility_rate_us_impact, na.rm = TRUE)
+    },
+    .groups = "drop"
+  )
+
+
+# Detect the impact columns dynamically
+impact_vars <- names(power_gen_table_data)[grepl("_impact$", names(power_gen_table_data))]
+
+# Reshape the dataset to long format
+power_gen_long <- power_gen_table_data %>%
+  pivot_longer(cols = all_of(impact_vars), 
+               names_to = "dataset", 
+               values_to = "value")
+
+
+# ----INDUSTRIAL IMPACTS----
+
+# ----TRANSPORTATION IMPACTS----
+
+# Collapse to final table values
+transportation_table_data <- transportation_impacts_summary %>%
+  group_by(impact_level, impact_metric) %>%
+  summarise_impacts(capex, vehicle_purchase, fuel_cost_savings) %>%
+  rename(vehicle_capex_louisiana_impact = capex_louisiana_impact) %>%
+  rename(vehicle_capex_us_impact = capex_us_impact)
+
+
+# Detect the impact columns dynamically
+impact_vars <- names(transportation_table_data)[grepl("_impact$", names(transportation_table_data))]
+
+# Reshape the dataset to long format
+transportation_long <- transportation_table_data %>%
+  pivot_longer(cols = all_of(impact_vars), 
+               names_to = "dataset", 
+               values_to = "value")

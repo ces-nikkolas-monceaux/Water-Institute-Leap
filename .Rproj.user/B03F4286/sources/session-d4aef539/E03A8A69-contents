@@ -1,0 +1,76 @@
+# =============================================================================
+# Script Name:     louisiana_energy_production_02.R
+# Purpose:         Load data files
+# Author:          Nikkolas Monceaux
+# Date Created:    2025-09-10
+# Last Modified:   2025-09-10 by Nikkolas Monceaux
+#
+# Inputs:          input
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           Exploratory code. Trying to estimate CAPEX and OPEX of power sector
+# =============================================================================
+
+library(dplyr)
+
+# ----- Data Load -----
+elec_capacity_la <- readRDS("sandbox/data/elec_capacity_la.rds")
+elec_generation_la <- readRDS("sandbox/data/elec_generation_la.rds")
+sets <- names(elec_capacity_la)
+sets2 <- names(elec_generation_la)
+
+elec_capacity_la$total <- data.frame()
+elec_generation_la$total <- data.frame()
+
+# ----- parameters -----
+capex <- c(ng = 875, nuc = 7861, coal = 4103, solar = 1502, bat = 1744, hydro = 7073, bio = 12632)
+opex_fixed <- c(ng = 11.5, nuc = 156.2, coal = 61.6, solar = 20.23, bat = 40, hydro = 33.54, bio = 261.18)
+opex_var <- c(ng = 2.66, nuc = 2.52, coal = 6.4, solar = 0, hydro = 0, bio = 9.65)
+
+# ----- Data Analysis -----
+for (df in sets) {
+  elec_capacity_la[[df]] <- elec_capacity_la[[df]] %>%
+    arrange(response.data.period) %>%
+    mutate(
+      year = as.integer(response.data.period),
+      type = response.data.energysourceid,
+      capacity = as.numeric(response.data.capability), 
+      change_capacity = capacity - lag(capacity),
+      capex_no_retire = change_capacity * capex[[df]] * 1000,
+      capex_adj_retire = (change_capacity + lag(capacity)/30) * capex[[df]] * 1000,
+      capex_adj_retire = ifelse(capex_adj_retire < 0, 0, capex_adj_retire),
+      opex_fixed = capacity * opex_fixed[[df]] * 1000,
+      type = ifelse(type == "SOL", "SUN", type),
+      type = ifelse(type == "OBM", "BIO", type)
+    )
+  
+  elec_capacity_la$total <- bind_rows(elec_capacity_la$total, elec_capacity_la[[df]])
+}
+
+for (df in sets2) {
+  elec_generation_la[[df]] <- elec_generation_la[[df]] %>%
+    arrange(response.data.period) %>%
+    mutate(
+      year = as.integer(response.data.period),
+      type = response.data.fueltypeid,
+      generation = as.numeric(response.data.generation),
+      opex_var = generation * opex_var[[df]] * 1000
+      
+    )
+  
+  elec_generation_la$total <- bind_rows(elec_generation_la$total, elec_generation_la[[df]])
+}
+
+costs <- full_join(elec_capacity_la$total, elec_generation_la$total, by=c("year", "type"))
+
+saveRDS(costs, "sandbox/data/costs.rds")
+
+test_costs <- costs %>%
+  filter(year == 2023) %>%
+  mutate(
+    capex = ifelse(type == "COL", capex_adj_retire, capex_no_retire),
+    capex = ifelse(type == "NG", capex_adj_retire, capex),
+    opex = opex_fixed +opex_var 
+  ) %>%
+  summarise(opex = sum(opex))

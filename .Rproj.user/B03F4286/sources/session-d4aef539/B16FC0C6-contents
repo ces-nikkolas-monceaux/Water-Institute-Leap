@@ -1,0 +1,64 @@
+# =============================================================================
+# Script Name:     louisiana_energy_production_01.R
+# Purpose:         Load data files
+# Author:          Nikkolas Monceaux
+# Date Created:    2025-09-10
+# Last Modified:   2025-09-10 by Nikkolas Monceaux
+#
+# Inputs:          input
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           Exploratory code. Trying to estimate CAPEX and OPEX of power sector
+#                 This code is loading the data
+# =============================================================================
+
+library(dplyr)
+
+api <- function(url, api_key) {
+  full_url <- paste0(url, "&api_key=", api_key)
+  request <- httr::GET(full_url)
+  data <- httr::content(request, as="text") 
+  parsed_data <- jsonlite::fromJSON(data) 
+  if (!is.null(parsed_data$response$data)) {
+    result <- as.data.frame(parsed_data)
+    return(result)
+  }
+  else {
+    stop("No data found in API response")
+  }
+}
+
+elec_capacity_la <- list()
+elec_capacity_la$ng <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=NG&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$nuc <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=NUC&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key"))%>%
+  filter(response.data.producerTypeDescription=="All sectors") %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$coal <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=COL&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$solar <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=SOL&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$bat <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=BAT&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$hydro <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=HYC&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+elec_capacity_la$bio <- api("https://api.eia.gov/v2/electricity/state-electricity-profiles/capability/data/?frequency=annual&data[0]=capability&facets[stateId][]=LA&facets[energysourceid][]=OBM&facets[producertypeid][]=TOT&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.energysourceid, response.data.capability.units, response.data.capability)
+
+elec_generation_la <- list()
+elec_generation_la$ng <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=NG&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+elec_generation_la$nuc <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=NUC&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+elec_generation_la$coal <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=COL&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+elec_generation_la$solar <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=SUN&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+elec_generation_la$hydro <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=HYC&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+elec_generation_la$bio <- api("https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?frequency=annual&data[0]=generation&facets[location][]=LA&facets[fueltypeid][]=BIO&facets[sectorid][]=99&sort[0][column]=period&sort[0][direction]=desc&offset=0", Sys.getenv("eia_api_key")) %>%
+  select(response.data.period, response.data.fueltypeid, response.data.generation, response.data.generation.units)
+  
+saveRDS(elec_capacity_la, "sandbox/data/elec_capacity_la.rds")
+saveRDS(elec_generation_la, "sandbox/data/elec_generation_la.rds")

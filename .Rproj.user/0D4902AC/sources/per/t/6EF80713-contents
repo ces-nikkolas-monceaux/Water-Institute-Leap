@@ -1,0 +1,58 @@
+# =============================================================================
+# Script Name:     02-02_clean_data.R
+# Purpose:         Clean data for analysis
+# Author:          Garrett Ordner
+# Date Created:    2025-06-07
+# Last Modified:   2025-07-20 by Garrett Ordner
+# =============================================================================
+
+#-------Clean LEIM Multipliers-------
+# create a unified set of leim multipliers with sector allocations
+
+leim_allocation <- prepare_leim_data(leim_64, leim_376) %>%
+  left_join(sector_allocation, by = "sector_id") %>%
+  filter(
+    rowSums(across(ends_with("_alloc"), ~ .x == 0)) < 
+      length(across(ends_with("_alloc")))
+  )
+
+#write allocation and rps summary to csv
+leim_allocation %>%
+  group_by(sector_id) %>%
+  summarise(
+    across(
+      matches("(_alloc|_rps)$"),
+      \(x) mean(x, na.rm = TRUE)
+    ),
+    .groups = "drop"
+  ) %>%
+readr::write_csv(., here("data","clean","leim_allocation_summary.csv"))
+
+#-------Clean Electric Generation Data-------
+
+power_gen <- baseline_costs_and_production_by_prodtype %>%
+  mutate(  #inflation adjustment
+    capex = capex/((1+cagr)^time_period),
+    opex = opex/((1+cagr)^time_period),
+    total_usd = total_usd/((1+cagr)^time_period)
+  ) %>%
+  group_by(time_period) %>%
+  summarise(
+    capex = sum(capex, na.rm = TRUE),
+    opex = sum(opex, na.rm = TRUE),
+    total_usd = sum(total_usd, na.rm = TRUE),
+    production = sum(production, na.rm = TRUE),
+    .groups = "drop"  # optional: ungroup the result
+  ) %>%
+  revenue_requirement(., time_period, capex, opex, wacc = utility_wacc, life = utility_plant_life)
+
+#-------Clean Transportation Data-------
+#fuel savings in gallons of gas
+transportation_efficiency_costs_savings <- transportation_efficiency_all_fules %>%
+  mutate(
+    capex = capex/((1+cagr)^time_period), #inflation adjustment
+    gallons_gasoline_saved = transportation_volume_saved_in_pj * gallon_gas_per_pj,
+    fuel_cost_savings = gallons_gasoline_saved * gasoline_10_yr_avg_price_2025_dollars
+  ) %>%
+  select(primary_id, time_period, capex, fuel_cost_savings)
+

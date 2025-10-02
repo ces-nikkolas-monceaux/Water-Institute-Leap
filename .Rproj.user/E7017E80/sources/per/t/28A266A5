@@ -1,0 +1,26 @@
+{
+    "id": "28A266A5",
+    "path": "~/GitHub/Water Institute LEAP/scripts/03-02-Output.R",
+    "project_path": "scripts/03-02-Output.R",
+    "type": "r_source",
+    "hash": "401832771",
+    "contents": "",
+    "dirty": true,
+    "created": 1759357913528.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "160,1",
+        "scrollLine": "119"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1759412123,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1759412133898,
+    "read_only": false,
+    "read_only_alternatives": []
+}

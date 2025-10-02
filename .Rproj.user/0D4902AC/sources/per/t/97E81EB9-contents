@@ -1,0 +1,74 @@
+# =============================================================================
+# Script Name:     02-01_energy_calculation.R
+# Purpose:         Rate Requirement inputs, Energy calculations and conversions for fuel savings
+# Author:          Garrett Ordner
+# Date Created:    2025-07-20
+# Last Modified:   2025-07-20 by Garrett Ordner
+#
+# Inputs:          cpi_seasonally_adjusted, gasoline_price
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           Energy calculations for fuel savings
+# =============================================================================
+
+#----UTILITY REVENUE REQUIREMENT ASSUMPTIONS---
+utility_plant_life <- 40 #asset life in years
+utility_wacc <- .07 #weighted average cost of capital (return on rate base)
+
+#----10 YEAR AVERAGE GDP Deflator----
+# Step 1: Parse date column and sort
+gdpdef_recent <- GDPDEF %>%
+  mutate(date = mdy(observation_date)) %>%
+  arrange(date)
+
+# Step 2: Filter to the most recent 10 years (40 quarters)
+gdpdef_10y <- gdpdef_recent %>%
+  slice_tail(n = 40)
+
+# Step 3: Calculate CAGR
+start_value <- first(gdpdef_10y$gdpdef)
+end_value <- last(gdpdef_10y$gdpdef)
+years <- 10
+
+cagr <- (end_value / start_value)^(1 / years) - 1
+
+rm(gdpdef_recent, gdpdef_10y, start_value, end_value, years)
+#----GASOLINE PRICES----
+#ten year average gasoline prices adjusted for inflation
+
+
+annual_inflation <- cpi_seasonally_adjusted %>%
+  group_by(year) %>%
+  summarise(
+    cpi = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+gasoline_10_yr_avg_price_2025_dollars <- annual_inflation %>%
+  mutate(
+    cpi_2025 = cpi[year == 2025],
+    cpi_ratio = cpi_2025 / cpi
+  ) %>%
+  inner_join(gasoline_price, by = "year") %>%
+  mutate(
+    gasoline_price_per_gallon_2025_dollars = gasoline_price_per_gallon * cpi_ratio
+  ) %>%
+  filter(year >= 2015, year <= 2024) %>%
+  summarise(
+    ten_year_avg_gasoline_price_2025_dollars = mean(gasoline_price_per_gallon_2025_dollars, na.rm = TRUE)
+  ) %>%
+  pull(.)
+
+
+
+# ---- Conversion Factors ----
+#gallons of gas to petajoules for fuel savings
+tonne_gas_per_gj <- 44.750
+kiloliter_per_tonne <- .753
+gj_per_pj <- 1000
+gallon_per_kiloliter <- 264.172
+gallon_gas_per_pj <- tonne_gas_per_gj*kiloliter_per_tonne*gj_per_pj*gallon_per_kiloliter  #Petajoules to gallons gasoline
+
+
+

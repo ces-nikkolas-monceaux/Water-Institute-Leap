@@ -1,0 +1,138 @@
+# =============================================================================
+# Script Name:     03_analyze_data.R
+# Purpose:         Data analysis
+# Author:          Garrett Ordner
+# Date Created:    2025-06-08
+# Last Modified:   2025-07-21 by Garrett Ordner
+#
+# Inputs:          
+# Outputs:         
+#
+# Dependencies:    
+# Notes:
+# =============================================================================
+
+# -------POWER GENERATION ECONOMIC IMPACTS-------
+power_impacts <-  crossing(leim_allocation, power_gen) %>% 
+  mutate(
+    capex_shock = capex * power_capex_alloc,
+    opex_shock = opex * power_opex_alloc,
+    utility_rate_shock = revenue_requirement * labor_income_alloc * (-1)
+  ) %>%
+  mutate(
+    capex_louisiana_impact = capex_shock * louisiana_purchasing_share * louisiana_multiplier,
+    capex_us_impact        = capex_shock * u_s_purchasing_share * u_s_multiplier,
+    opex_louisiana_impact  = opex_shock * louisiana_purchasing_share * louisiana_multiplier,
+    opex_us_impact         = opex_shock * u_s_purchasing_share * u_s_multiplier,
+    utility_rate_louisiana_impact = utility_rate_shock * louisiana_purchasing_share * louisiana_multiplier,
+    utility_rate_us_impact        = utility_rate_shock * u_s_purchasing_share * u_s_multiplier
+  )
+# collapse across sectors
+power_impacts_summary <- power_impacts %>%
+  group_by(time_period, impact_type) %>%
+  collapse_sum(
+    capex_shock,
+    opex_shock,
+    utility_rate_shock,
+    capex_louisiana_impact,
+    opex_louisiana_impact,
+    utility_rate_louisiana_impact,
+    capex_us_impact,
+    opex_us_impact,
+    utility_rate_us_impact,
+    .groups = "drop"  # optional: ungroup the result
+  )  %>%
+  mutate(
+    # Replace underscores with spaces and capitalize each word
+    impact_type_clean = str_replace_all(impact_type, "_", " "),
+    impact_type_clean = str_to_title(impact_type_clean)
+  ) %>%
+  # Split into two variables at the first space only
+  separate(
+    impact_type_clean,
+    into = c("impact_level", "impact_metric"),
+    sep = " ",
+    extra = "merge",
+    fill = "right"
+  ) %>%
+  select(
+    time_period,
+    impact_level,
+    impact_metric,
+    capex_louisiana_impact,
+    opex_louisiana_impact,
+    utility_rate_louisiana_impact,
+    capex_us_impact,
+    opex_us_impact,
+    utility_rate_us_impact
+    
+  ) %>%
+  filter(impact_metric %in% c("Earnings", "Value Added", "Employment"))
+
+# write results to csv
+readr::write_csv(power_impacts_summary, "data/clean/power_impacts_summary.csv")
+
+# -------TRANSPORTATION ECONOMIC IMPACTS-------
+
+transportation_impacts <-  crossing(leim_allocation, transportation_efficiency_costs_savings) %>% 
+  mutate(
+    capex_shock = capex/1000000 * vehicle_capex_alloc,
+    vehicle_purchase_shock = capex/1000000 * labor_income_alloc * (-1),
+    fuel_cost_savings_shock = fuel_cost_savings/1000000 * labor_income_alloc
+  ) %>%
+  mutate(
+    capex_louisiana_impact = capex_shock * louisiana_purchasing_share * louisiana_multiplier,
+    capex_us_impact        = capex_shock * u_s_purchasing_share * u_s_multiplier,
+    vehicle_purchase_louisiana_impact = vehicle_purchase_shock * louisiana_purchasing_share * louisiana_multiplier,
+    vehicle_purchase_us_impact        = vehicle_purchase_shock * u_s_purchasing_share * u_s_multiplier,
+    fuel_cost_savings_louisiana_impact = fuel_cost_savings_shock * louisiana_purchasing_share * louisiana_multiplier,
+    fuel_cost_savings_us_impact        = fuel_cost_savings_shock * u_s_purchasing_share * u_s_multiplier
+  )
+
+
+
+# collapse across sectors
+transportation_impacts_summary <- transportation_impacts %>%
+  group_by(time_period, impact_type) %>%
+  collapse_sum(
+    capex_shock, 
+    capex_louisiana_impact, 
+    capex_us_impact, 
+    vehicle_purchase_shock, 
+    vehicle_purchase_louisiana_impact,
+    vehicle_purchase_us_impact,
+    fuel_cost_savings_shock,
+    fuel_cost_savings_louisiana_impact,
+    fuel_cost_savings_us_impact
+  ) %>%
+  mutate(
+    # Replace underscores with spaces and capitalize each word
+    impact_type_clean = str_replace_all(impact_type, "_", " "),
+    impact_type_clean = str_to_title(impact_type_clean)
+  ) %>%
+  # Split into two variables at the first space only
+  separate(
+    impact_type_clean,
+    into = c("impact_level", "impact_metric"),
+    sep = " ",
+    extra = "merge",
+    fill = "right"
+  ) %>%
+  select(
+    time_period,
+    impact_level,
+    impact_metric,
+    capex_louisiana_impact,
+    capex_us_impact,
+    vehicle_purchase_shock, 
+    vehicle_purchase_louisiana_impact,
+    vehicle_purchase_us_impact,
+    fuel_cost_savings_shock,
+    fuel_cost_savings_louisiana_impact,
+    fuel_cost_savings_us_impact
+  ) %>%
+  filter(impact_metric %in% c("Earnings", "Value Added", "Employment"))
+transportation_emp <- transportation_impacts_summary %>%
+  filter(str_detect(impact_metric, regex("Employment", ignore_case = TRUE)))
+# write results to csv
+readr::write_csv(transportation_impacts_summary, "data/clean/transportation_impacts_summary.csv")

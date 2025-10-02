@@ -1,0 +1,36 @@
+# =============================================================================
+# Script Name:     04-2_generate_output.R
+# Purpose:         Data analysis
+# Author:          Garrett Ordner
+# Date Created:    2025-07-21
+# Last Modified:   2025-07-21 by Garrett Ordner
+#
+# Inputs:          input
+# Outputs:         output
+# =============================================================================
+
+# ----EXCEL TABLE DATA----
+# Define path to output file
+
+
+datasets <- list(
+  power_gen_long = power_gen_long,
+  transportation_long = transportation_long
+)
+
+# Load or create the workbook
+output_path <- here("output", "economic_impacts.xlsx")
+wb <- if (file.exists(output_path)) loadWorkbook(output_path) else createWorkbook()
+
+# Loop over each dataset and write to a sheet
+for (sheet_name in names(datasets)) {
+  data <- datasets[[sheet_name]]
+  
+  if (sheet_name %in% names(wb)) removeWorksheet(wb, sheet_name)
+  
+  addWorksheet(wb, sheet_name)
+  writeData(wb, sheet = sheet_name, x = data)
+}
+
+# Save without deleting other sheets
+saveWorkbook(wb, output_path, overwrite = TRUE)

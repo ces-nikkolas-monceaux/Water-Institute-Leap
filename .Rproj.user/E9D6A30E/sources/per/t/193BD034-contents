@@ -1,0 +1,41 @@
+# =============================================================================
+# Script Name:     00_main.R
+# Purpose:         Main script
+# Author:          Garrett Ordner
+# Date Created:    2025-06-02
+# Last Modified:   2025-06-08 by Garrett Ordner
+#
+# Inputs:          input
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           
+# =============================================================================
+
+# Optional: advise user
+message("Run `renv::restore()` once to set up the project environment.")
+
+# ---- Load core packages ----
+if (!requireNamespace("renv", quietly = TRUE)) {
+  install.packages("renv")
+}
+library(here)
+library(dplyr)
+library(readr)
+library(stringr)
+library(ggplot2)
+library(lubridate)
+library(tibble)
+library(purrr)
+library(janitor)
+library(glue)
+library(tidyr)
+library(scales)
+
+# ---- Scripts ---- 
+source(here::here("R","99_functions.R")) #Define Functions
+source(here::here("scripts","01_load_data.R")) #Load the data
+source(here::here("scripts","02_clean_data.R")) #Clean, transform, and merge the data
+
+
+

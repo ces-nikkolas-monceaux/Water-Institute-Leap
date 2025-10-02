@@ -1,0 +1,17 @@
+# =============================================================================
+# Script Name:     01_load_data.R
+# Purpose:         Load data files
+# Author:          Garrett Ordner
+# Date Created:    2025-06-02
+# Last Modified:   2025-06-02 by Garrett Ordner
+#
+# Inputs:          data/raw/*.csv
+# Outputs:         output
+#
+# Dependencies:    
+# Notes:           
+# =============================================================================
+
+# load all csv in data/raw
+import_csv_folder(here::here("data", "raw"))
+
