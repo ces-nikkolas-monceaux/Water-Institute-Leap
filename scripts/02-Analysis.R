@@ -58,10 +58,12 @@ for(id in primaries) {
     leim_calc(shock="total_shock", time="time_period", la_rps="la_rps") %>%
     collapse_totals_time()
   
-  ccs_impact[[as.character(id)]] <- shocks$ccs %>%
-    filter(primary_id == id) %>%
-    leim_calc(shock="ccs_shock", time="time_period") %>%
-    collapse_totals_time()
+  if (id %in% shocks$ccs$primary_id) {
+    ccs_impact[[as.character(id)]] <- shocks$ccs %>%
+      filter(primary_id == id) %>%
+      leim_calc(shock="ccs_shock", time="time_period") %>%
+      collapse_totals_time()
+  }
 }
 
 power_diff <- list()
@@ -74,8 +76,10 @@ for(id in primaries) {
   industry_diff[[as.character(id)]] <- as.data.frame(industry_impact[[as.character(id)]] - baseline$industry_impact) %>%
     mutate(time=baseline$industry_impact$time)
   
-  ccs_diff[[as.character(id)]] <- as.data.frame(ccs_impact[[as.character(id)]]) %>%
-    mutate(time=ccs_impact[[as.character(id)]][["time"]])
+  if (id %in% names(ccs_impact)) {
+    ccs_diff[[as.character(id)]] <- as.data.frame(ccs_impact[[as.character(id)]]) %>%
+      mutate(time=ccs_impact[[as.character(id)]][["time"]])
+  }
 }
 
 # ----- Data Save -----

@@ -67,6 +67,7 @@ for (id in primaries) {
     for (var in vars) {
       this_data <- maps$datasets[[data_used]][[as.character(id)]]
       #Plots graphs for scenario id
+      if (!is.null(this_data)) {
       graph <- ggplot(this_data, mapping=aes(x = time ) )+
         geom_line(aes(y= !!sym(var)),color=get_ces_color("purple")) +
         labs(x = "Year", y = maps$label[var], title=paste(maps$titles[data_used], as.character(id))) + scale_x_continuous(limits=c(0,36), expand = c(0, 0)) +
@@ -76,6 +77,7 @@ for (id in primaries) {
       graph <-  add_ces_source_and_logo(graph, source_text = "Source: CES Analysis",
                                         logo_path = "sources/logo/CESLogo.png")
       save_ces_plot(graph, paste0("output/Econ_Impact/scenarios/", maps$graph_names[[data_used]], "/", var, as.character(id),".png"))
+      }
     }
   }
 }
